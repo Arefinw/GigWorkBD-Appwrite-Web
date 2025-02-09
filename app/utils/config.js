@@ -1,0 +1,20 @@
+import dotenv from "dotenv";
+dotenv.config();
+
+const API_ENDPOINT = process.env.API_ENDPOINT;
+const PROJECT_ID = process.env.PROJECT_ID;
+const API_KEY_SECRET = process.env.API_KEY_SECRET;
+const DATABASE_ID = process.env.DATABASE_ID;
+const CLIENT_COLLECTION = process.env.CLIENT_COLLECTION;
+const FREELANCER_COLLECTION = process.env.FREELANCER_COLLECTION;
+const PROFILE_BUCKET = process.env.PROFILE_BUCKET;
+
+export {
+  API_ENDPOINT,
+  PROJECT_ID,
+  API_KEY_SECRET,
+  DATABASE_ID,
+  CLIENT_COLLECTION,
+  FREELANCER_COLLECTION,
+  PROFILE_BUCKET,
+};
