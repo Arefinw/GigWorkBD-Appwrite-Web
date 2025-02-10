@@ -10,14 +10,24 @@
     "start": "remix-serve ./build/server/index.js"
   },
   "dependencies": {
+    "@ant-design/icons": "^5.6.1",
+    "@chakra-ui/react": "^2.10.4",
+    "@conform-to/react": "^1.2.2",
+    "@conform-to/zod": "^1.2.2",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
     "@remix-run/node": "^2.15.3",
     "@remix-run/react": "^2.15.3",
     "@remix-run/serve": "^2.15.3",
+    "antd": "^5.23.4",
     "dotenv": "^16.4.7",
+    "framer-motion": "^12.4.1",
     "isbot": "^4.1.0",
     "node-appwrite": "^15.0.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "remix-flat-routes": "^0.6.5",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@remix-run/dev": "^2.15.3",

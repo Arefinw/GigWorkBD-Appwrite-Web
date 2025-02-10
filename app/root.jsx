@@ -1,27 +1,29 @@
+// app/root.jsx
 import {
   Links,
   Meta,
   Outlet,
   Scripts,
   ScrollRestoration,
+  isRouteErrorResponse,
+  useRouteError,
 } from "@remix-run/react";
 
-import "./tailwind.css";
+import style from "../app/styles/tailwind.css?url";
+import Header from "./components/Header";
+import Footer from "./components/Footer";
 
-export const links = () => [
-  { rel: "preconnect", href: "https://fonts.googleapis.com" },
-  {
-    rel: "preconnect",
-    href: "https://fonts.gstatic.com",
-    crossOrigin: "anonymous",
-  },
-  {
-    rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap",
-  },
-];
+export function links() {
+  return [
+    { rel: "stylesheet", href: style },
+    {
+      rel: "stylesheet",
+      href: "https://fonts.googleapis.com/icon?family=Material+Icons",
+    },
+  ];
+}
 
-export function Layout({ children }) {
+export default function App() {
   return (
     <html lang="en">
       <head>
@@ -31,7 +33,15 @@ export function Layout({ children }) {
         <Links />
       </head>
       <body>
-        {children}
+        <header>
+          <Header />
+        </header>
+        <main>
+          <Outlet />
+        </main>
+        <footer>
+          <Footer />
+        </footer>
         <ScrollRestoration />
         <Scripts />
       </body>
@@ -39,6 +49,28 @@ export function Layout({ children }) {
   );
 }
 
-export default function App() {
-  return <Outlet />;
+export function ErrorBoundary() {
+  const error = useRouteError();
+
+  if (isRouteErrorResponse(error)) {
+    return (
+      <div>
+        <h1>
+          {error.status} {error.statusText}
+        </h1>
+        <p>{error.data}</p>
+      </div>
+    );
+  } else if (error instanceof Error) {
+    return (
+      <div>
+        <h1>Error</h1>
+        <p>{error.message}</p>
+        <p>The stack trace is:</p>
+        <pre>{error.stack}</pre>
+      </div>
+    );
+  } else {
+    return <h1>Unknown Error</h1>;
+  }
 }
