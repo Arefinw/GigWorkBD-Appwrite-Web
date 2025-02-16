@@ -1,27 +1,10 @@
-import { Form, useActionData } from "@remix-run/react";
+// app/routes/_auth+/login.jsx
+import { getFormProps, getInputProps, useForm } from "@conform-to/react";
 import { parseWithZod } from "@conform-to/zod";
-import { useForm } from "@conform-to/react";
-import { z } from "zod";
-import "../../styles/login.css";
-
-const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-});
-
-export const action = async ({ request }) => {
-  const { redirect } = await import("@remix-run/react");
-  const formData = await request.formData();
-  const submission = parseWithZod(formData, { schema: loginSchema });
-
-  if (!submission.value) {
-    return { errors: submission.error };
-  }
-
-  // Perform login logic here (e.g., authenticate user)
-
-  return redirect("/dashboard"); // Redirect on successful login
-};
+import { Form, useActionData, Link } from "@remix-run/react";
+import { motion } from "framer-motion";
+import { loginSchema } from "../../utils/schema";
+import { EnvelopeIcon, LockClosedIcon } from "@heroicons/react/24/outline";
 
 export default function Login() {
   const lastSubmission = useActionData();
@@ -34,47 +17,210 @@ export default function Login() {
   });
 
   return (
-    <div id="webcrumbs">
-      <div className="w-full">
-        <main className="flex justify-center items-center min-h-[calc(100vh-76px)] bg-gray-50">
-          <div className="w-[400px] p-8 bg-white rounded-2xl shadow-lg border-2 border-teal-400">
-            <h2 className="text-2xl font-bold mb-6 text-emerald-500">
-              Welcome back
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-white flex items-center justify-center p-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3 }}
+        className="w-full max-w-[420px] bg-white rounded-xl shadow-lg border border-emerald-100"
+      >
+        <div className="p-8">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-bold text-emerald-600 mb-2">
+              Welcome Back
             </h2>
-            <Form method="post" {...form.props} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Email</label>
-                <input
-                  {...fields.email.props}
-                  type="email"
-                  placeholder="Email"
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 outline-none transition-all"
-                />
-                {fields.email.error && (
-                  <p className="text-red-500">{fields.email.error}</p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Password
-                </label>
-                <input
-                  {...fields.password.props}
-                  type="password"
-                  placeholder="Password"
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 outline-none transition-all"
-                />
-                {fields.password.error && (
-                  <p className="text-red-500">{fields.password.error}</p>
-                )}
-              </div>
-              <button className="w-full py-3 bg-emerald-600 text-white rounded-lg font-medium hover:bg-teal-700 transform hover:-translate-y-0.5 transition-all">
-                Log In
-              </button>
-            </Form>
+            <p className="text-gray-600 text-sm">
+              Continue your freelance journey
+            </p>
           </div>
-        </main>
-      </div>
+
+          <Form method="POST" {...getFormProps(form)} className="space-y-5">
+            <div className="space-y-2">
+              <div className="relative">
+                <EnvelopeIcon className="h-4 w-4 text-emerald-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  placeholder="Email"
+                  className="w-full pl-8 pr-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  {...getInputProps(fields.email, { type: "email" })}
+                />
+              </div>
+              {fields.email.errors && (
+                <p className="text-red-500 text-xs mt-1">
+                  {fields.email.errors}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <div className="relative">
+                <LockClosedIcon className="h-4 w-4 text-emerald-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  placeholder="Password"
+                  className="w-full pl-8 pr-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  {...getInputProps(fields.password, { type: "password" })}
+                />
+              </div>
+              {fields.password.errors && (
+                <p className="text-red-500 text-xs mt-1">
+                  {fields.password.errors}
+                </p>
+              )}
+            </div>
+
+            <div className="flex justify-end">
+              <Link
+                to="/forgot-password"
+                className="text-xs text-emerald-600 hover:text-emerald-700"
+              >
+                Forgot password?
+              </Link>
+            </div>
+
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              type="submit"
+              className="w-full bg-emerald-500 text-white py-2.5 text-sm rounded-lg font-medium hover:bg-emerald-600 transition-colors"
+            >
+              Log In
+            </motion.button>
+
+            <div className="relative my-5">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200"></div>
+              </div>
+              <div className="relative flex justify-center text-xs">
+                <span className="px-2 bg-white text-gray-500">
+                  Or continue with
+                </span>
+              </div>
+            </div>
+
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              type="submit"
+              name="intent"
+              value="google-auth"
+              className="w-full flex items-center justify-center gap-2 py-2.5 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 48 48">
+                <path
+                  fill="#EA4335"
+                  d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
+                />
+                <path
+                  fill="#4285F4"
+                  d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
+                />
+              </svg>
+              <span>Continue with Google</span>
+            </motion.button>
+
+            <p className="text-center text-gray-600 text-xs mt-4">
+              Don't have an account?{" "}
+              <Link
+                to="/signup"
+                className="text-emerald-600 hover:text-emerald-700 font-medium"
+              >
+                Sign up
+              </Link>
+            </p>
+          </Form>
+        </div>
+      </motion.div>
     </div>
   );
 }
+
+export async function action({ request }) {
+  console.log("login action triggered...");
+  try {
+    const { redirect } = await import("@remix-run/node");
+    const { parseWithZod } = await import("@conform-to/zod");
+    const { createAdminClient, createSessionClient } = await import(
+      "../../utils/appwrite"
+    );
+    const { login } = await import("../../controllers/authController");
+    const { getSession, commitSession } = await import("../../utils/session");
+    const { loginSchema } = await import("../../utils/schema");
+    const formData = await request.formData();
+    const intent = formData.get("intent");
+
+    // Handle Google Authentication
+    if (intent === "google-auth") {
+      try {
+        const { redirectToGoogleAuth } = await import(
+          "../../controllers/authController"
+        );
+        return await redirectToGoogleAuth();
+      } catch (error) {
+        return new Response(
+          JSON.stringify({
+            status: "error",
+            message: error.message,
+          }),
+          { status: 400 }
+        );
+      }
+    }
+
+    // Handle Email/Password Login
+    const submission = parseWithZod(formData, { schema: loginSchema });
+    console.log(submission);
+    if (submission.status !== "success") {
+      return submission.reply();
+    }
+
+    try {
+      const appwriteSession = await login(submission);
+
+      const { userId, secret } = appwriteSession;
+
+      // Create session Clinet
+      const { account } = await createSessionClient(secret);
+
+      // Get prefs
+      const prefs = await account.getPrefs();
+
+      const session = await getSession();
+      session.set("userId", userId);
+      session.set("secret", secret);
+      session.set("role", prefs.role);
+
+      return redirect(`/${prefs.role}/dashboard`, {
+        headers: {
+          "Set-Cookie": await commitSession(session),
+        },
+      });
+    } catch (error) {
+      console.error("Login error:", error);
+      return new Response(
+        JSON.stringify({
+          status: "error",
+          message: error.message,
+        }),
+        { status: 400 }
+      );
+    }
+  } catch (error) {
+    console.error("Login error:", error);
+    return new Response(
+      JSON.stringify({
+        status: "error",
+        message: error.message,
+      }),
+      { status: 400 }
+    );
+  }
+}
+
+// Helper function for error messages

@@ -5,43 +5,65 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLoaderData,
   isRouteErrorResponse,
   useRouteError,
 } from "@remix-run/react";
 
-import style from "../app/styles/tailwind.css?url";
+import style from "./styles/tailwind.css?url";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
+import { getSession } from "./utils/session";
 
 export function links() {
   return [
     { rel: "stylesheet", href: style },
     {
+      rel: "preconnect",
+      href: "https://fonts.gstatic.com",
+      crossOrigin: "anonymous",
+    },
+    {
       rel: "stylesheet",
-      href: "https://fonts.googleapis.com/icon?family=Material+Icons",
+      href: "https://fonts.googleapis.com/css2?family=Material+Icons&display=swap",
     },
   ];
 }
 
+export const meta = () => {
+  return [
+    { charset: "utf-8" },
+    { title: "GigWorkBD - Your Freelance Marketplace" },
+    { name: "viewport", content: "width=device-width,initial-scale=1" },
+  ];
+};
+
+export async function loader({ request }) {
+  // Get user session from cookies
+  const session = await getSession(request.headers.get("Cookie"));
+  // Return user data if authenticated
+  return {
+    userId: session?.get("userId") || null,
+    role: session?.get("role") || null,
+    isAuthenticated: !!session?.get("secret"),
+  };
+}
+
 export default function App() {
+  const { userId, role, isAuthenticated } = useLoaderData();
+
   return (
     <html lang="en">
       <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
       </head>
       <body>
-        <header>
-          <Header />
-        </header>
+        <Header userId={userId} role={role} />
         <main>
-          <Outlet />
+          <Outlet context={{ userId, role, isAuthenticated }} />
         </main>
-        <footer>
-          <Footer />
-        </footer>
+        <Footer />
         <ScrollRestoration />
         <Scripts />
       </body>

@@ -7,18 +7,11 @@ import {
   ID,
   Users,
   Storage,
+  Permission,
+  Role,
 } from "node-appwrite";
 
-import {
-  API_ENDPOINT,
-  PROJECT_ID,
-  API_KEY_SECRET,
-  DATABASE_ID,
-  CLIENT_COLLECTION_ID,
-  FREELANCER_COLLECTION_ID,
-  PROFILE_BUCKET_ID,
-} from "./config";
-import { parse } from "cookie";
+import { API_ENDPOINT, PROJECT_ID, API_KEY_SECRET } from "./config";
 
 const createAdminClient = async () => {
   try {
@@ -40,14 +33,14 @@ const createAdminClient = async () => {
   }
 };
 
-const createSessionClient = async (session) => {
+const createSessionClient = async (secret) => {
   try {
     const client = new Client()
       .setEndpoint(API_ENDPOINT)
       .setProject(PROJECT_ID);
 
-    if (session) {
-      await client.setSession(session.get("secret"));
+    if (secret) {
+      await client.setSession(secret);
     }
 
     return {
@@ -61,7 +54,7 @@ const createSessionClient = async (session) => {
   }
 };
 
-export { createAdminClient, createSessionClient, ID };
+export { createAdminClient, createSessionClient, ID, Permission, Role };
 
 // const createUser = async (submission) => {
 //   const { client, account, databases, users, storage } =
