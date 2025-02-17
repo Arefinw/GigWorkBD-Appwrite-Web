@@ -8,6 +8,7 @@ import { EnvelopeIcon, LockClosedIcon } from "@heroicons/react/24/outline";
 
 export default function Login() {
   const lastSubmission = useActionData();
+
   const [form, fields] = useForm({
     lastSubmission,
     onValidate({ formData }) {
@@ -15,6 +16,8 @@ export default function Login() {
     },
     shouldValidate: "onBlur",
   });
+
+  console.log("fields", fields);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-white flex items-center justify-center p-4">
@@ -84,6 +87,11 @@ export default function Login() {
             >
               Log In
             </motion.button>
+            {lastSubmission?.status === "error" && (
+              <p className="text-red-500 text-sm text-center">
+                {lastSubmission.message}
+              </p>
+            )}
 
             <div className="relative my-5">
               <div className="absolute inset-0 flex items-center">
@@ -146,9 +154,7 @@ export async function action({ request }) {
   try {
     const { redirect } = await import("@remix-run/node");
     const { parseWithZod } = await import("@conform-to/zod");
-    const { createAdminClient, createSessionClient } = await import(
-      "../../utils/appwrite"
-    );
+    const { createSessionClient } = await import("../../utils/appwrite");
     const { login } = await import("../../controllers/authController");
     const { getSession, commitSession } = await import("../../utils/session");
     const { loginSchema } = await import("../../utils/schema");
@@ -175,42 +181,31 @@ export async function action({ request }) {
 
     // Handle Email/Password Login
     const submission = parseWithZod(formData, { schema: loginSchema });
-    console.log(submission);
+
     if (submission.status !== "success") {
       return submission.reply();
     }
 
-    try {
-      const appwriteSession = await login(submission);
+    const appwriteSession = await login(submission);
 
-      const { userId, secret } = appwriteSession;
+    const { userId, secret } = appwriteSession;
 
-      // Create session Clinet
-      const { account } = await createSessionClient(secret);
+    // Create session Clinet
+    const { account } = await createSessionClient(secret);
 
-      // Get prefs
-      const prefs = await account.getPrefs();
+    // Get prefs
+    const prefs = await account.getPrefs();
 
-      const session = await getSession();
-      session.set("userId", userId);
-      session.set("secret", secret);
-      session.set("role", prefs.role);
+    const session = await getSession();
+    session.set("userId", userId);
+    session.set("secret", secret);
+    session.set("role", prefs.role);
 
-      return redirect(`/${prefs.role}/dashboard`, {
-        headers: {
-          "Set-Cookie": await commitSession(session),
-        },
-      });
-    } catch (error) {
-      console.error("Login error:", error);
-      return new Response(
-        JSON.stringify({
-          status: "error",
-          message: error.message,
-        }),
-        { status: 400 }
-      );
-    }
+    return redirect(`/${prefs.role}/dashboard`, {
+      headers: {
+        "Set-Cookie": await commitSession(session),
+      },
+    });
   } catch (error) {
     console.error("Login error:", error);
     return new Response(
@@ -218,9 +213,12 @@ export async function action({ request }) {
         status: "error",
         message: error.message,
       }),
-      { status: 400 }
+      {
+        status: 400,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
     );
   }
 }
-
-// Helper function for error messages
