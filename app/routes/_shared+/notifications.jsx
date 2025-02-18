@@ -1,3 +1,4 @@
+// app/routes/_shared+/notifications.jsx
 import { useLoaderData } from "@remix-run/react";
 import {
   BellIcon,

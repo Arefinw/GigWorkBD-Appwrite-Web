@@ -1,3 +1,4 @@
+// app/routes/jobs+/contracts.$id.jsx
 import { useLoaderData, Link } from "@remix-run/react";
 import {
   DocumentTextIcon,

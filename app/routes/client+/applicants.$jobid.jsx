@@ -1,3 +1,4 @@
+// app/routes/client+/applicants.$jobid.jsx
 import { useLoaderData, Link } from "@remix-run/react";
 import {
   UserCircleIcon,

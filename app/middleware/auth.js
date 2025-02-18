@@ -1,12 +1,15 @@
 // app/middleware/auth.js
+import { redirect } from "@remix-run/node";
 import { getSession } from "../utils/session";
 
-export async function requiredRole(request, allowedRoles) {
+export async function checkAuth({ request }) {
   const session = await getSession(request.headers.get("Cookie"));
-
-  if (!allowedRoles.includes(session.get("role"))) {
-    throw new Response("Unauthorized", { status: 401 });
+  if (
+    !session.get("secret") ||
+    !session.get("userId") ||
+    !session.get("role")
+  ) {
+    return redirect("/login");
   }
-
-  return session;
+  return true;
 }

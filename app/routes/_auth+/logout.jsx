@@ -1,8 +1,6 @@
 import { Form, useNavigation } from "@remix-run/react";
 import { useEffect } from "react";
 
-// Server-side action to handle logout
-
 // Client-side component
 export default function Logout() {
   const navigation = useNavigation();
@@ -38,6 +36,7 @@ export default function Logout() {
   );
 }
 
+// Server-side action
 export async function action({ request }) {
   const { redirect } = await import("@remix-run/node");
   try {

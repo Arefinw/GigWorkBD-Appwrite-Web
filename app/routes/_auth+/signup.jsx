@@ -222,12 +222,13 @@ export default function Signup() {
 export async function action({ request }) {
   // imports
   const { redirect } = await import("@remix-run/react");
+  const { parseWithZod } = await import("@conform-to/zod");
   const { createUser, registerWithGoogle } = await import(
     "../../controllers/authController"
   );
   const { createSessionClient } = await import("../../utils/appwrite");
   const { getSession, commitSession } = await import("../../utils/session");
-
+  const { signupSchema } = await import("../../utils/schema");
   console.log("signup action triggered...");
   // Parse form data
   const formData = await request.formData();
@@ -243,7 +244,12 @@ export async function action({ request }) {
           status: "error",
           message: error.message,
         }),
-        { status: 400 }
+        {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
       );
     }
   }
@@ -285,7 +291,7 @@ export async function action({ request }) {
     session.set("secret", secret);
     session.set("role", submission.value.role);
     console.log(session);
-    return redirect("/dashboard", {
+    return redirect(`${submission.value.role}/dashboard`, {
       headers: {
         "Set-Cookie": await commitSession(session),
       },
@@ -297,7 +303,12 @@ export async function action({ request }) {
         status: "error",
         message: error.message,
       }),
-      { status: 400 }
+      {
+        status: 400,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
     );
   }
 }

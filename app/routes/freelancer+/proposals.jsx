@@ -1,3 +1,4 @@
+// app/routes/freelancer+/proposals.jsx
 import { useLoaderData } from "@remix-run/react";
 import {
   DocumentTextIcon,

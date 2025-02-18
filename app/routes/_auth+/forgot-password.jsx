@@ -1,26 +1,26 @@
+// app/routes/_auth+/forgot-password.jsx
 import { useTransition } from "react";
-import { Form, Link } from "@remix-run/react";
+import { Form, Link, useActionData } from "@remix-run/react";
 import { EnvelopeOpenIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
-
-export async function action({ request }) {
-  const formData = await request.formData();
-  const email = formData.get("email");
-
-  // Add your actual password reset logic here
-  // Example: await sendPasswordResetEmail(email);
-
-  // Simulate API call delay
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-
-  return { success: true };
-}
+import { useForm, getFormProps, getInputProps } from "@conform-to/react";
+import { parseWithZod } from "@conform-to/zod";
+import { EnvelopeIcon } from "@heroicons/react/24/outline";
+import { forgotPasswordSchema } from "../../utils/schema";
 
 export default function ForgotPassword() {
+  const lastSubmission = useActionData();
   const transition = useTransition();
   const isSubmitting = transition.state === "submitting";
-  const success =
-    transition.submission?.formData.get("email") &&
-    transition.type === "actionReload";
+  const success = lastSubmission?.success;
+
+  // Set up form handling with Conform
+  const [form, fields] = useForm({
+    lastSubmission,
+    onValidate({ formData }) {
+      return parseWithZod(formData, { schema: forgotPasswordSchema });
+    },
+    shouldValidate: "onBlur",
+  });
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -49,22 +49,21 @@ export default function ForgotPassword() {
             </div>
           </div>
         ) : (
-          <Form className="mt-8 space-y-6" method="post" replace>
-            <div className="rounded-md shadow-sm -space-y-px">
-              <div>
-                <label htmlFor="email" className="sr-only">
-                  Email address
-                </label>
+          <Form method="POST" {...getFormProps(form)} className="space-y-5">
+            <div className="space-y-2">
+              <div className="relative">
+                <EnvelopeIcon className="h-4 w-4 text-emerald-500 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:z-10 sm:text-sm"
-                  placeholder="Enter your email address"
+                  placeholder="Email"
+                  className="w-full pl-8 pr-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  {...getInputProps(fields.email, { type: "email" })}
                 />
               </div>
+              {fields.email.errors && (
+                <p className="text-red-500 text-xs mt-1">
+                  {fields.email.errors}
+                </p>
+              )}
             </div>
 
             <div>
@@ -91,4 +90,37 @@ export default function ForgotPassword() {
       </div>
     </div>
   );
+}
+
+export async function action({ request }) {
+  const { parseWithZod } = await import("@conform-to/zod");
+  const { forgotPasswordSchema } = await import("../../utils/schema");
+  const { createAdminClient } = await import("../../utils/appwrite");
+  const formData = await request.formData();
+  const origin = new URL(request.url).origin;
+
+  const submission = await parseWithZod(formData, {
+    schema: forgotPasswordSchema,
+  });
+
+  if (!submission.value) {
+    return submission.reply();
+  }
+
+  const { account } = await createAdminClient();
+
+  try {
+    const email = submission.value.email;
+    await account.createRecovery(email, `${origin}/reset-password`);
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    console.error(error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 }

@@ -1,3 +1,4 @@
+// app/routes/freelancer+/jobs.jsx
 import { useLoaderData } from "@remix-run/react";
 import {
   BriefcaseIcon,

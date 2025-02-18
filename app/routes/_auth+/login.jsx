@@ -17,8 +17,6 @@ export default function Login() {
     shouldValidate: "onBlur",
   });
 
-  console.log("fields", fields);
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-white flex items-center justify-center p-4">
       <motion.div
@@ -150,33 +148,22 @@ export default function Login() {
 }
 
 export async function action({ request }) {
-  console.log("login action triggered...");
   try {
     const { redirect } = await import("@remix-run/node");
     const { parseWithZod } = await import("@conform-to/zod");
     const { createSessionClient } = await import("../../utils/appwrite");
     const { login } = await import("../../controllers/authController");
     const { getSession, commitSession } = await import("../../utils/session");
+    const { redirectToGoogleAuth } = await import(
+      "../../controllers/authController"
+    );
     const { loginSchema } = await import("../../utils/schema");
     const formData = await request.formData();
     const intent = formData.get("intent");
 
     // Handle Google Authentication
     if (intent === "google-auth") {
-      try {
-        const { redirectToGoogleAuth } = await import(
-          "../../controllers/authController"
-        );
-        return await redirectToGoogleAuth();
-      } catch (error) {
-        return new Response(
-          JSON.stringify({
-            status: "error",
-            message: error.message,
-          }),
-          { status: 400 }
-        );
-      }
+      return await redirectToGoogleAuth();
     }
 
     // Handle Email/Password Login

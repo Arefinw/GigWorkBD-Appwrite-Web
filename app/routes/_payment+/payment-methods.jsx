@@ -1,3 +1,4 @@
+// app/routes/_payment+/payment-methods.jsx
 import { Form, useLoaderData } from "@remix-run/react";
 import {
   CreditCardIcon,

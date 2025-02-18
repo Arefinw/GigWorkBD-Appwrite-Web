@@ -1,3 +1,4 @@
+// app/routes/_public+/jobs.$id.jsx
 import { useLoaderData, Link } from "@remix-run/react";
 import {
   BriefcaseIcon,

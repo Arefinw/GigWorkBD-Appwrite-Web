@@ -1,3 +1,4 @@
+// app/routes/_payment+/escrow.$id.jsx
 import { useLoaderData, Link } from "@remix-run/react";
 import {
   CurrencyBangladeshiIcon,

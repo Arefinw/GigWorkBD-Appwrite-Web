@@ -1,3 +1,4 @@
+// app/routes/jobs+/$id/proposals.jsx
 import { Link, useLoaderData } from "@remix-run/react";
 import {
   UserCircleIcon,
@@ -7,6 +8,7 @@ import {
   ClockIcon,
   ChartBarIcon,
   FunnelIcon,
+  StarIcon,
   ArrowLeftIcon,
 } from "@heroicons/react/24/outline";
 

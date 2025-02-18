@@ -1,3 +1,4 @@
+// app/routes/_shared+/settings.jsx
 import { Form, Link } from "@remix-run/react";
 import {
   UserCircleIcon,

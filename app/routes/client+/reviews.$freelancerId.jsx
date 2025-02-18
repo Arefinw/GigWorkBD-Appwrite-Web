@@ -1,3 +1,4 @@
+// app/routes/client+/reviews.$freelancerId.jsx
 import { useLoaderData, Link } from "@remix-run/react";
 import {
   StarIcon,

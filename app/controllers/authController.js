@@ -13,7 +13,6 @@ import {
   FREELANCER_COLLECTION,
   USER_COLLECTION,
 } from "../utils/config";
-import { Permission } from "node-appwrite";
 
 //  Create user
 export async function createUser(submission) {
@@ -120,9 +119,4 @@ export async function loginWithGoogle(origin) {
     console.error("Login user:", error.message);
     throw new Error(`Login failed: ${error.message}`);
   }
-}
-
-//  Logout
-export async function logout() {
-  return null;
 }

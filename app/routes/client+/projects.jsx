@@ -1,3 +1,4 @@
+// app/routes/client+/projects.jsx
 import { useLoaderData } from "@remix-run/react";
 import {
   BriefcaseIcon,

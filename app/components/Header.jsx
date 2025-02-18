@@ -1,3 +1,4 @@
+// app/components/Header.jsx
 import { Link } from "@remix-run/react";
 import { Menu, Transition } from "@headlessui/react";
 import {
@@ -22,7 +23,7 @@ export default function Header({ userId, role }) {
     client: [
       { name: "Dashboard", href: "/client/dashboard", icon: ChartBarIcon },
       { name: "My Projects", href: "/client/projects", icon: DocumentTextIcon },
-      { name: "Post Job", href: "/client/post-job", icon: PlusCircleIcon },
+      { name: "Post Gig", href: "/client/post-gig", icon: PlusCircleIcon },
     ],
     freelancer: [
       {

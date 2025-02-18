@@ -1,3 +1,4 @@
+// app/routes/freelancer+/earnings.jsx
 import { useLoaderData } from "@remix-run/react";
 import {
   CurrencyBangladeshiIcon,

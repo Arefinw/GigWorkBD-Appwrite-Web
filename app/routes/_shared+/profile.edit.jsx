@@ -1,5 +1,5 @@
+// // app/routes/_shared+/profile.edit.jsx
 // import { useLoaderData, useActionData, Form } from "@remix-run/react";
-// import { json, redirect } from "@remix-run/node";
 // import { getUserById, updateUser } from "~/models/user.server";
 // import { authenticator } from "~/services/auth.server";
 // import {
@@ -28,7 +28,7 @@
 // });
 
 // export async function loader({ request }) {
-//   import { redirect } from "@remix-run/react";
+//   const { json, redirect } = await import("@remix-run/node");
 //   const user = await authenticator.isAuthenticated(request, {
 //     failureRedirect: "/login",
 //   });
@@ -37,6 +37,7 @@
 // }
 
 // export async function action({ request }) {
+//   const { json } = await import("@remix-run/node");
 //   const formData = await request.formData();
 //   const user = await authenticator.isAuthenticated(request);
 

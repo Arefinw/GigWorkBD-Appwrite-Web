@@ -1,3 +1,4 @@
+// app/routes/jobs+/$id/apply.jsx
 import { Form, useLoaderData, useNavigation } from "@remix-run/react";
 import { json, redirect } from "@remix-run/node";
 import { z } from "zod";
