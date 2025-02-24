@@ -18,11 +18,11 @@ export default function Header({ userId, role }) {
   const navigation = {
     common: [
       { name: "Home", href: "/", icon: HomeIcon },
-      { name: "Browse Jobs", href: "/jobs", icon: BriefcaseIcon },
+      { name: "Browse Gigs", href: "/freelancer/gigs", icon: BriefcaseIcon },
     ],
     client: [
       { name: "Dashboard", href: "/client/dashboard", icon: ChartBarIcon },
-      { name: "My Projects", href: "/client/projects", icon: DocumentTextIcon },
+      { name: "My Gigs", href: "/client/gigs", icon: DocumentTextIcon },
       { name: "Post Gig", href: "/client/post-gig", icon: PlusCircleIcon },
     ],
     freelancer: [
@@ -31,8 +31,12 @@ export default function Header({ userId, role }) {
         href: "/freelancer/bids",
         icon: CurrencyBangladeshiIcon,
       },
-      { name: "Find Work", href: "/freelancer/jobs", icon: BriefcaseIcon },
-      { name: "Profile", href: "/freelancer/profile", icon: UserCircleIcon },
+      { name: "Find Work", href: "/freelancer/gigs", icon: BriefcaseIcon },
+      {
+        name: "Dashboard",
+        href: "/freelancer/dashboard",
+        icon: ChartBarIcon,
+      },
     ],
   };
 

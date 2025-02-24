@@ -269,7 +269,7 @@ export async function action({ request }) {
     const { account } = await createSessionClient(secret);
 
     // Email Verification
-    await account.createVerification(`${origin}/verifyEmail`);
+    await account.createVerification(`${origin}/verify`);
 
     // Update prefs
     await account.updatePrefs({
@@ -291,7 +291,7 @@ export async function action({ request }) {
     session.set("secret", secret);
     session.set("role", submission.value.role);
     console.log(session);
-    return redirect(`${submission.value.role}/dashboard`, {
+    return redirect(`/${submission.value.role}/dashboard`, {
       headers: {
         "Set-Cookie": await commitSession(session),
       },

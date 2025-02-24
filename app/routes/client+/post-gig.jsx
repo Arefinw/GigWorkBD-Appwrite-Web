@@ -9,15 +9,85 @@ import {
 import { parseWithZod } from "@conform-to/zod";
 import { Form, useActionData } from "@remix-run/react";
 import { gigSchema } from "../../utils/schema";
+import { Listbox } from "@headlessui/react";
 import {
   BriefcaseIcon,
   CurrencyBangladeshiIcon,
+  ChevronUpDownIcon,
+  CheckIcon,
   DocumentTextIcon,
   ClockIcon,
   TagIcon,
   CalendarIcon,
+  CodeBracketIcon,
+  PaintBrushIcon,
+  PencilIcon,
+  MegaphoneIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
+
+const categories = [
+  {
+    name: "Development & IT",
+    icon: CodeBracketIcon,
+    subcategories: [
+      "Full Stack Development",
+      "Frontend Development",
+      "Backend Development",
+      "Mobile Development",
+      "DevOps Engineering",
+      "Database Administration",
+    ],
+  },
+  {
+    name: "Design & Creative",
+    icon: PaintBrushIcon,
+    subcategories: [
+      "UI/UX Design",
+      "Graphic Design",
+      "Logo Design",
+      "3D Modeling",
+      "Video Editing",
+      "Motion Graphics",
+    ],
+  },
+  {
+    name: "Writing & Translation",
+    icon: PencilIcon,
+    subcategories: [
+      "Content Writing",
+      "Technical Writing",
+      "Copywriting",
+      "Translation",
+      "Proofreading",
+      "Creative Writing",
+    ],
+  },
+  {
+    name: "Digital Marketing",
+    icon: MegaphoneIcon,
+    subcategories: [
+      "SEO",
+      "Social Media Marketing",
+      "Email Marketing",
+      "PPC Advertising",
+      "Content Marketing",
+      "Influencer Marketing",
+    ],
+  },
+  {
+    name: "Business Services",
+    icon: BriefcaseIcon,
+    subcategories: [
+      "Virtual Assistant",
+      "Data Entry",
+      "Project Management",
+      "Business Consulting",
+      "Financial Analysis",
+      "Human Resources",
+    ],
+  },
+];
 
 export default function PostGig() {
   const lastSubmission = useActionData();
@@ -32,8 +102,9 @@ export default function PostGig() {
   });
   const [requiredSkills, setSkills] = useState([]);
   const [newSkill, setNewSkill] = useState("");
-
   const [budgetType, setBudgetType] = useState("one-time");
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedSubcategory, setSelectedSubcategory] = useState(null);
 
   const handleAddSkill = () => {
     const trimmedSkill = newSkill.trim();
@@ -132,48 +203,46 @@ export default function PostGig() {
               )}
             </div>
           </div>
-          {/* Budget Range */}
+          {/* Budget */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              {budgetType === "one-time"
-                ? "Budget Range"
-                : "Monthly Rate Range"}
+              {budgetType === "one-time" ? "Budget" : "Monthly Rate"}
             </label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <div className="flex items-center">
-                  <span className="mr-2 text-gray-500">৳</span>
-                  <input
-                    required
-                    placeholder="Minimum"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                    {...getInputProps(fields.minBudget, { type: "number" })}
-                  />
-                </div>
-                {fields.minBudget.errors && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {fields.minBudget.errors}
-                  </p>
-                )}
-              </div>
-              <div>
-                <div className="flex items-center">
-                  <span className="mr-2 text-gray-500">৳</span>
-                  <input
-                    type="number"
-                    required
-                    placeholder="Maximum"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                    {...getInputProps(fields.maxBudget, { type: "number" })}
-                  />
-                </div>
-                {fields.maxBudget.errors && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {fields.maxBudget.errors}
-                  </p>
-                )}
-              </div>
+            <div className="flex items-center">
+              <span className="mr-2 text-gray-500">৳</span>
+              <input
+                required
+                placeholder="Enter your budget"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                {...getInputProps(fields.budget, { type: "number" })}
+              />
             </div>
+            {fields.budget.errors && (
+              <p className="text-red-500 text-xs mt-1">
+                {fields.budget.errors}
+              </p>
+            )}
+          </div>
+          {/* Negotiable */}
+          <div className="mt-4 flex items-center space-x-2">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="negotiable"
+                className="h-4 w-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                {...getInputProps(fields.negotiable, {
+                  type: "checkbox",
+                })}
+              />
+              <label htmlFor="negotiable" className="text-sm text-gray-600">
+                Budget is negotiable
+              </label>
+            </div>
+            {fields.negotiable.errors && (
+              <p className="text-red-500 text-xs mt-1">
+                {fields.negotiable.errors}
+              </p>
+            )}
           </div>
           {/* Skill tags (above input) */}
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -239,7 +308,7 @@ export default function PostGig() {
               Experience Level
             </label>
             <select
-              {...getSelectProps(fields.experience)}
+              {...getSelectProps(fields.experienceLevel)}
               defaultValue={"DEFAULT"}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             >
@@ -250,34 +319,86 @@ export default function PostGig() {
               <option value={"intermediate"}>Intermediate</option>
               <option value={"advanced"}>Advanced</option>
             </select>
-            {fields.experience.errors && (
+            {fields.experienceLevel.errors && (
               <p className="text-red-500 text-xs mt-1">
-                {fields.experience.errors}
+                {fields.experienceLevel.errors}
               </p>
             )}
           </div>
           {/* Gig Category */}
+          {/* Category Selection */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Gig Category
+              Project Category
             </label>
-            <select
-              {...getSelectProps(fields.category)}
-              defaultValue={"DEFAULT"}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-            >
-              <option value="DEFAULT" disabled>
-                Select a category
-              </option>
-              <option>Web Development</option>
-              <option>Mobile Development</option>
-              <option>UI/UX Design</option>
-              <option>Digital Marketing</option>
-              <option>Content Writing</option>
-            </select>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {categories.map((category) => (
+                <div
+                  key={category.name}
+                  className={`p-4 border rounded-lg cursor-pointer ${
+                    selectedCategory?.name === category.name
+                      ? "border-emerald-500 ring-2 ring-emerald-500"
+                      : "border-gray-300 hover:border-emerald-300"
+                  }`}
+                  onClick={() =>
+                    setSelectedCategory(
+                      selectedCategory?.name === category.name ? null : category
+                    )
+                  }
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <category.icon className="h-5 w-5 text-emerald-600" />
+                    <span className="font-medium">{category.name}</span>
+                  </div>
+                  {selectedCategory?.name === category.name && (
+                    <div className="mt-2 space-y-2">
+                      {category.subcategories.map((sub) => (
+                        <div
+                          key={sub}
+                          className={`flex items-center p-2 rounded-md ${
+                            selectedSubcategory === sub
+                              ? "bg-emerald-50 text-emerald-700"
+                              : "hover:bg-gray-50"
+                          }`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedSubcategory(sub);
+                          }}
+                        >
+                          <span className="text-sm">{sub}</span>
+                          {selectedSubcategory === sub && (
+                            <CheckIcon className="h-4 w-4 ml-auto text-emerald-600" />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Hidden inputs for form submission */}
+            <input
+              type="hidden"
+              name="category"
+              value={selectedCategory?.name || ""}
+            />
+            <input
+              type="hidden"
+              name="subcategory"
+              value={selectedSubcategory || ""}
+            />
+
+            {/* Validation errors */}
             {fields.category.errors && (
               <p className="text-red-500 text-xs mt-1">
                 {fields.category.errors}
+              </p>
+            )}
+            {fields.subcategory.errors && (
+              <p className="text-red-500 text-xs mt-1">
+                {fields.subcategory.errors}
               </p>
             )}
           </div>
@@ -330,13 +451,25 @@ export async function loader({ request }) {
 }
 
 export async function action({ request }) {
+  console.log("post gig action triggered...");
   const { redirect } = await import("@remix-run/node");
   const { parseWithZod } = await import("@conform-to/zod");
   const { getSession } = await import("../../utils/session");
   const { gigSchema } = await import("../../utils/schema");
+  const { createAdminClient, ID, Permission, Role } = await import(
+    "../../utils/appwrite"
+  );
+  const { DATABASE_ID, USER_COLLECTION, GIG_COLLECTION } = await import(
+    "../../utils/config"
+  );
+  const { getUser } = await import("../../middleware/database");
   const formData = await request.formData();
   const session = await getSession(request.headers.get("Cookie"));
-  if (!session.get("secret") || !session.get("userId")) {
+  if (
+    !session.get("secret") ||
+    !session.get("userId") ||
+    !session.get("role")
+  ) {
     return redirect("/login");
   }
   const submission = parseWithZod(formData, { schema: gigSchema });
@@ -344,8 +477,44 @@ export async function action({ request }) {
   if (submission.status !== "success") {
     return submission.reply();
   }
-
   console.log("submission", submission);
+  const clientId = await getUser(session.get("userId"));
+  console.log("clientId", clientId);
 
-  return true;
+  const { databases } = await createAdminClient();
+  const gig = await databases.createDocument(
+    DATABASE_ID,
+    GIG_COLLECTION,
+    ID.unique(),
+    {
+      title: submission.value.title,
+      description: submission.value.description,
+      requiredSkills: submission.value.requiredSkills,
+      duration: submission.value.duration,
+      clientId: clientId,
+      budget: submission.value.budget,
+      budgetType: submission.value.budgetType,
+      isNegotiable: submission.value.negotiable,
+      experienceLevel: submission.value.experienceLevel,
+      category: submission.value.category,
+      subcategory: submission.value.subcategory,
+    },
+    [
+      Permission.read(Role.user(session.get("userId"))),
+      Permission.update(Role.user(session.get("userId"))),
+      Permission.delete(Role.user(session.get("userId"))),
+    ]
+  );
+
+  const user = await databases.getDocument(
+    DATABASE_ID,
+    USER_COLLECTION,
+    clientId
+  );
+  const currentGigs = user.createdGigs || [];
+  await databases.updateDocument(DATABASE_ID, USER_COLLECTION, clientId, {
+    createdGigs: [...currentGigs, gig.$id],
+  });
+
+  return redirect("/client/gigs");
 }

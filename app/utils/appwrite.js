@@ -9,6 +9,7 @@ import {
   Storage,
   Permission,
   Role,
+  Query,
 } from "node-appwrite";
 
 import { API_ENDPOINT, PROJECT_ID, API_KEY_SECRET } from "./config";
@@ -54,4 +55,4 @@ const createSessionClient = async (secret) => {
   }
 };
 
-export { createAdminClient, createSessionClient, ID, Permission, Role };
+export { createAdminClient, createSessionClient, ID, Permission, Role, Query };
