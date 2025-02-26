@@ -15,10 +15,10 @@ import {
 
 export async function loader({ request, params }) {
   const { redirect } = await import("@remix-run/node");
-  const { getSession } = await import("../../../utils/session");
-  const { createSessionClient } = await import("../../../utils/appwrite");
+  const { getSession } = await import("../../../../utils/session");
+  const { createSessionClient } = await import("../../../../utils/appwrite");
   const { DATABASE_ID, GIG_COLLECTION, USER_COLLECTION } = await import(
-    "../../../utils/config"
+    "../../../../utils/config"
   );
 
   const session = await getSession(request.headers.get("Cookie"));
@@ -181,7 +181,7 @@ export default function GigDetails() {
             {/* Apply Card */}
             <div className="bg-white rounded-xl shadow-lg p-6">
               <button className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg mb-4">
-                Apply Now
+                <Link to={`/freelancer/gigs/${gig.id}/apply`}>Apply Now</Link>
               </button>
               <button className="w-full py-3 border border-emerald-600 text-emerald-600 hover:bg-emerald-50 rounded-lg">
                 Save Gig

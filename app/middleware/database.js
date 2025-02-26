@@ -9,7 +9,7 @@ export async function getUser(userId) {
       Query.equal("userId", userId),
     ]);
 
-    return user.documents[0].$id;
+    return user.documents[0];
   } catch (error) {
     console.error("Error getting user:", error.message);
     return null;

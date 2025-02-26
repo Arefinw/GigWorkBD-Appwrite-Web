@@ -66,3 +66,17 @@ export const gigSchema = z.object({
     errorMap: () => ({ message: "Please select a valid duration" }),
   }),
 });
+
+export const applicationSchema = z.object({
+  coverletter: z
+    .string()
+    .min(50, { message: "Cover letter must be at least 100 characters" })
+    .max(5000, { message: "Cover letter must be at most 5000 characters" }),
+  proposedBudget: z
+    .number({
+      required_error: "Proposed amount is required",
+      invalid_type_error: "Budget must be a number",
+    })
+    .min(100, { message: "Budget must be at least 100" })
+    .max(10000000, { message: "Budget must be at most 10000000" }),
+});

@@ -141,11 +141,7 @@ export default function FreelancerGigs() {
                   <div className="flex items-center gap-2">
                     <ChartBarIcon className="h-5 w-5 text-emerald-600" />
                     <span className="text-sm">
-                      {gig.applicantsId.length} applicants
-                    </span>
-                    <span className="text-gray-400">•</span>
-                    <span className="text-sm">
-                      {gig.applications.length} proposals
+                      {gig.applications.length} applications
                     </span>
                   </div>
                 </div>

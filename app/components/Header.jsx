@@ -27,8 +27,8 @@ export default function Header({ userId, role }) {
     ],
     freelancer: [
       {
-        name: "My Bids",
-        href: "/freelancer/bids",
+        name: "My Applications",
+        href: "/freelancer/applications",
         icon: CurrencyBangladeshiIcon,
       },
       { name: "Find Work", href: "/freelancer/gigs", icon: BriefcaseIcon },

@@ -37,7 +37,7 @@ export async function loader({ request }) {
 
     // Get all client's gigs
     const gigs = await databases.listDocuments(DATABASE_ID, GIG_COLLECTION, [
-      Query.equal("clientId", user),
+      Query.equal("clientId", user.$id),
     ]);
 
     console.log("gigs", gigs);

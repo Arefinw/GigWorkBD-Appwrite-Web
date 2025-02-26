@@ -478,8 +478,8 @@ export async function action({ request }) {
     return submission.reply();
   }
   console.log("submission", submission);
-  const clientId = await getUser(session.get("userId"));
-  console.log("clientId", clientId);
+  const client = await getUser(session.get("userId"));
+  console.log("clientId", client.$id);
 
   const { databases } = await createAdminClient();
   const gig = await databases.createDocument(

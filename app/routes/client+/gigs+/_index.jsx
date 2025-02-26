@@ -31,13 +31,13 @@ export async function loader({ request }) {
     }
 
     const user = await getUser(session.get("userId"));
-    console.log("user", user);
+    console.log("user", user.$id);
 
     const { databases } = await createSessionClient(session.get("secret"));
     console.log("databases", databases);
     // Fetch all gigs for this client
     const gigs = await databases.listDocuments(DATABASE_ID, GIG_COLLECTION, [
-      Query.equal("clientId", user),
+      Query.equal("clientId", user.$id),
     ]);
     console.log("gigs", gigs);
 
