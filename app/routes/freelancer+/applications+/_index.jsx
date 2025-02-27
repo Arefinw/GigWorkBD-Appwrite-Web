@@ -1,5 +1,6 @@
 // app/routes/freelancer+/applications+/_index.jsx
-import { useLoaderData } from "@remix-run/react";
+import { useState } from "react";
+import { useLoaderData, Link } from "@remix-run/react";
 import {
   DocumentTextIcon,
   CheckCircleIcon,
@@ -7,55 +8,78 @@ import {
   XCircleIcon,
   CurrencyBangladeshiIcon,
   UserCircleIcon,
+  CalendarIcon,
 } from "@heroicons/react/24/outline";
 
-export async function loader() {
-  // Mock data - replace with real API calls
-  return {
-    stats: {
-      total: 15,
-      accepted: 9,
-      pending: 4,
-      rejected: 2,
-    },
-    proposals: [
-      {
-        id: 1,
-        jobTitle: "E-commerce Website Development",
-        status: "accepted",
-        date: "2024-03-15",
-        proposedAmount: 45000,
-        client: {
-          name: "Tech Solutions BD",
-          rating: 4.8,
-        },
-        jobPosted: "5 days ago",
-      },
-      {
-        id: 2,
-        jobTitle: "Mobile App UI Design",
-        status: "pending",
-        date: "2024-03-18",
-        proposedAmount: 30000,
-        client: {
-          name: "Design Innovators",
-          rating: 4.5,
-        },
-        jobPosted: "2 days ago",
-      },
-      // Add more proposals
-    ],
-  };
+export async function loader({ request }) {
+  const { redirect } = await import("@remix-run/node");
+  const { getSession } = await import("../../../utils/session");
+  const { getUser } = await import("../../../middleware/database");
+  const { createSessionClient, Query } = await import(
+    "../../../utils/appwrite"
+  );
+  const { DATABASE_ID, APPLICATION_COLLECTION } = await import(
+    "../../../utils/config"
+  );
+
+  const session = await getSession(request.headers.get("Cookie"));
+
+  if (
+    !session.get("secret") ||
+    !session.get("userId") ||
+    !session.get("role")
+  ) {
+    return redirect("/login");
+  }
+
+  try {
+    const { databases } = await createSessionClient(session.get("secret"));
+    const freelancer = await getUser(session.get("userId"));
+
+    const applications = await databases.listDocuments(
+      DATABASE_ID,
+      APPLICATION_COLLECTION,
+      [Query.equal("freelancerId", freelancer.$id)]
+    );
+
+    const stats = {
+      totalApplications: applications.total,
+      pending: applications.documents.filter((a) => a.status === "pending")
+        .length,
+      accepted: applications.documents.filter((a) => a.status === "accepted")
+        .length,
+      rejected: applications.documents.filter((a) => a.status === "rejected")
+        .length,
+      withdrawn: applications.documents.filter((a) => a.status === "withdrawn")
+        .length,
+    };
+
+    return new Response(
+      JSON.stringify({ stats, applications: applications.documents }),
+      { headers: { "Content-Type": "application/json" } }
+    );
+  } catch (error) {
+    return new Response(
+      JSON.stringify({ error: "Failed to load applications" }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
 }
 
-export default function FreelancerProposals() {
-  const { stats, proposals } = useLoaderData();
+export default function FreelancerApplications() {
+  const { stats, applications } = useLoaderData();
+  const [activeFilter, setActiveFilter] = useState("pending");
 
   const statusStyles = {
-    accepted: "bg-emerald-100 text-emerald-800",
     pending: "bg-amber-100 text-amber-800",
+    accepted: "bg-emerald-100 text-emerald-800",
     rejected: "bg-red-100 text-red-800",
+    withdrawn: "bg-gray-100 text-gray-800",
   };
+
+  const filteredApplications = activeFilter
+    ? applications.filter((app) => app.status === activeFilter)
+    : applications;
 
   return (
     <div className="space-y-8">
@@ -63,95 +87,131 @@ export default function FreelancerProposals() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <StatCard
           icon={DocumentTextIcon}
-          title="Total Proposals"
-          value={stats.total}
+          title="Total Applications"
+          value={stats.totalApplications}
         />
         <StatCard
           icon={CheckCircleIcon}
           title="Accepted"
           value={stats.accepted}
-          percentage={(stats.accepted / stats.total) * 100}
         />
-        <StatCard
-          icon={ClockIcon}
-          title="Pending"
-          value={stats.pending}
-          percentage={(stats.pending / stats.total) * 100}
-        />
-        <StatCard
-          icon={XCircleIcon}
-          title="Rejected"
-          value={stats.rejected}
-          percentage={(stats.rejected / stats.total) * 100}
-        />
+        <StatCard icon={ClockIcon} title="Pending" value={stats.pending} />
+        <StatCard icon={XCircleIcon} title="Rejected" value={stats.rejected} />
       </div>
 
-      {/* Proposals List */}
+      {/* Applications List */}
       <div className="bg-white rounded-xl shadow-lg p-6">
-        <h2 className="text-xl font-semibold mb-6">Recent Proposals</h2>
-
-        {/* Status Filters */}
-        <div className="flex gap-2 mb-6">
-          {Object.keys(statusStyles).map((status) => (
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+          <h2 className="text-xl font-semibold">Your Applications</h2>
+          <div className="flex gap-2">
             <button
-              key={status}
-              className={`px-4 py-2 rounded-full text-sm font-medium capitalize ${statusStyles[status]}`}
+              onClick={() => setActiveFilter(null)}
+              className={`px-4 py-2 rounded-full text-sm font-medium ${
+                !activeFilter
+                  ? "bg-purple-100 text-purple-800"
+                  : "bg-gray-100 text-gray-800"
+              }`}
             >
-              {status} ({stats[status]})
+              All ({stats.totalApplications})
             </button>
-          ))}
+            {Object.entries({
+              pending: "Pending",
+              accepted: "Accepted",
+              rejected: "Rejected",
+              withdrawn: "Withdrawn",
+            }).map(([status, label]) => (
+              <button
+                key={status}
+                onClick={() => setActiveFilter(status)}
+                className={`px-4 py-2 rounded-full text-sm font-medium ${
+                  statusStyles[status]
+                } ${activeFilter === status ? "ring-2 ring-black" : ""}`}
+              >
+                {label} ({stats[status]})
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Proposals Table */}
-        <div className="space-y-4">
-          {proposals.map((proposal) => (
+        <div className="space-y-6">
+          {filteredApplications.map((application) => (
             <div
-              key={proposal.id}
+              key={application.$id}
               className="border rounded-lg p-6 hover:shadow-md transition-shadow"
             >
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                {/* Proposal Info */}
-                <div className="flex-1">
-                  <h3 className="font-semibold text-lg mb-2">
-                    {proposal.jobTitle}
-                  </h3>
-                  <div className="flex items-center gap-4 text-gray-600">
-                    <div className="flex items-center">
-                      <UserCircleIcon className="h-5 w-5 mr-2 text-emerald-600" />
-                      <span>{proposal.client.name}</span>
-                      <span className="ml-2 text-emerald-600">
-                        ★ {proposal.client.rating}
-                      </span>
+              <div className="flex flex-col md:flex-row justify-between gap-6">
+                {/* Application Details */}
+                <div className="flex-1 space-y-4">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold">
+                        {application.gigId.title}{" "}
+                        {/* Assuming populated gig data */}
+                      </h3>
+                      <div className="flex items-center mt-2 text-gray-600">
+                        <CalendarIcon className="h-5 w-5 mr-2 text-emerald-600" />
+                        <span>
+                          Applied:{" "}
+                          {new Date(
+                            application.$createdAt
+                          ).toLocaleDateString()}
+                        </span>
+                      </div>
                     </div>
-                    <span className="hidden md:block">•</span>
-                    <div className="flex items-center">
-                      <CurrencyBangladeshiIcon className="h-5 w-5 mr-2 text-emerald-600" />
-                      <span>৳{proposal.proposedAmount.toLocaleString()}</span>
+                    <span
+                      className={`px-3 py-1 rounded-full text-sm ${
+                        statusStyles[application.status]
+                      }`}
+                    >
+                      {application.status}
+                    </span>
+                  </div>
+
+                  {/* Budget and Client Info */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm text-gray-500">
+                        Proposed Budget
+                      </label>
+                      <p className="font-medium">
+                        ৳{application.proposedBudget.toLocaleString()}
+                      </p>
                     </div>
+                    <div>
+                      <label className="text-sm text-gray-500">Client</label>
+                      <div className="flex items-center">
+                        <UserCircleIcon className="h-5 w-5 mr-2 text-emerald-600" />
+                        <span>{application.clientId.name}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Cover Letter Preview */}
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium">Cover Letter</h4>
+                    <p className="text-gray-600 line-clamp-2">
+                      {application.coverletter}
+                    </p>
                   </div>
                 </div>
 
-                {/* Status and Actions */}
-                <div className="md:text-right space-y-2">
-                  <span
-                    className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      statusStyles[proposal.status]
-                    }`}
-                  >
-                    {proposal.status}
-                  </span>
-                  <div className="text-sm text-gray-500">
-                    Proposed {proposal.date}
-                  </div>
-                  <div className="mt-2 space-x-3">
-                    <button className="text-emerald-600 hover:text-emerald-700 text-sm font-medium">
-                      View Job
-                    </button>
-                    {proposal.status === "pending" && (
-                      <button className="text-red-600 hover:text-red-700 text-sm font-medium">
-                        Withdraw
-                      </button>
-                    )}
+                {/* Actions */}
+                <div className="md:w-64 space-y-4">
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium">Actions</h4>
+                    <div className="flex flex-col gap-2">
+                      <Link
+                        to={`/freelancer/applications/${application.$id}`}
+                        className="w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-center"
+                      >
+                        View Application
+                      </Link>
+                      {application.status === "pending" && (
+                        <button className="w-full px-4 py-2 border border-red-600 text-red-600 hover:bg-red-50 rounded">
+                          Withdraw
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -163,7 +223,7 @@ export default function FreelancerProposals() {
   );
 }
 
-function StatCard({ icon: Icon, title, value, percentage }) {
+function StatCard({ icon: Icon, title, value }) {
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
       <div className="flex items-center">
@@ -172,14 +232,7 @@ function StatCard({ icon: Icon, title, value, percentage }) {
         </div>
         <div className="ml-4">
           <dt className="text-sm font-medium text-gray-500">{title}</dt>
-          <dd className="mt-1 text-2xl font-semibold text-gray-900">
-            {value}
-            {percentage && (
-              <span className="ml-2 text-sm text-emerald-600">
-                ({percentage.toFixed(1)}%)
-              </span>
-            )}
-          </dd>
+          <dd className="mt-1 text-2xl font-semibold text-gray-900">{value}</dd>
         </div>
       </div>
     </div>

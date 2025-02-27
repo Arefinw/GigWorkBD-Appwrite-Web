@@ -180,9 +180,12 @@ export default function GigDetails() {
           <div className="space-y-6">
             {/* Apply Card */}
             <div className="bg-white rounded-xl shadow-lg p-6">
-              <button className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg mb-4">
-                <Link to={`/freelancer/gigs/${gig.id}/apply`}>Apply Now</Link>
-              </button>
+              <Link
+                to={`/freelancer/gigs/${gig.$id}/apply`}
+                className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg mb-4 inline-block text-center"
+              >
+                Apply Now
+              </Link>
               <button className="w-full py-3 border border-emerald-600 text-emerald-600 hover:bg-emerald-50 rounded-lg">
                 Save Gig
               </button>

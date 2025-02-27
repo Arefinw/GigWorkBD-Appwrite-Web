@@ -1,3 +1,4 @@
+// app/routes/client+/gigs+/_index.jsx
 import { useState } from "react";
 import { useLoaderData, Link } from "@remix-run/react";
 import {
