@@ -1,4 +1,4 @@
-// app/routes/_public+/gigs.$id.jsx
+// app/routes/freelancer+/gigs+/$id+/_index.jsx
 import { useLoaderData, Link } from "@remix-run/react";
 import {
   BriefcaseIcon,

@@ -1,5 +1,4 @@
 // app/routes/client+/gigs+/_index.jsx
-import { useState } from "react";
 import { useLoaderData, Link } from "@remix-run/react";
 import {
   BriefcaseIcon,
@@ -8,37 +7,34 @@ import {
   CheckCircleIcon,
   CalendarIcon,
   UserGroupIcon,
-  ArrowLeftIcon,
+  MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
 
 export async function loader({ request }) {
   const { redirect } = await import("@remix-run/node");
   const { getSession } = await import("../../../utils/session");
-  const { getUser } = await import("../../../middleware/database");
   const { createSessionClient, Query } = await import(
     "../../../utils/appwrite"
   );
   const { DATABASE_ID, GIG_COLLECTION } = await import("../../../utils/config");
+  const { getUser } = await import("../../../middleware/database");
+  const session = await getSession(request.headers.get("Cookie"));
+
+  if (
+    !session.get("secret") ||
+    !session.get("userId") ||
+    !session.get("role")
+  ) {
+    return redirect("/login");
+  }
 
   try {
-    const session = await getSession(request.headers.get("Cookie"));
-
-    if (
-      !session.get("secret") ||
-      !session.get("userId") ||
-      !session.get("role")
-    ) {
-      return redirect("/login");
-    }
-
-    const user = await getUser(session.get("userId"));
-    console.log("user", user.$id);
-
     const { databases } = await createSessionClient(session.get("secret"));
-    console.log("databases", databases);
+    // Get Client Document
+    const client = await getUser(session.get("userId"));
     // Fetch all gigs for this client
     const gigs = await databases.listDocuments(DATABASE_ID, GIG_COLLECTION, [
-      Query.equal("clientId", user.$id),
+      Query.equal("clientId", client.$id),
     ]);
     console.log("gigs", gigs);
 
@@ -46,49 +42,26 @@ export async function loader({ request }) {
     const stats = {
       totalGigs: gigs.total,
       openGigs: gigs.documents.filter((g) => g.status === "open").length,
-      closedGigs: gigs.documents.filter((g) => g.status === "in-progress")
+      inProgressGigs: gigs.documents.filter((g) => g.status === "in-progress")
         .length,
       completedGigs: gigs.documents.filter((g) => g.status === "completed")
         .length,
-      cancelledGigs: gigs.documents.filter((g) => g.status === "cancelled")
-        .length,
       totalBudget: gigs.documents.reduce((sum, g) => sum + g.budget, 0),
     };
-    console.log(stats);
 
-    return new Response(JSON.stringify({ stats, gigs: gigs.documents }), {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    return { stats, gigs: gigs.documents };
   } catch (error) {
-    return new Response(JSON.stringify({ error: "Failed to load gigs" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+    console.error("Error fetching client gigs:", error);
+    return { error: "Failed to load gigs" };
   }
 }
 
 export default function ClientGigs() {
   const { stats, gigs } = useLoaderData();
-  const [activeFilter, setActiveFilter] = useState("open");
-
-  const statusStyles = {
-    open: "bg-emerald-100 text-emerald-800",
-    "in-progress": "bg-blue-100 text-blue-800",
-    completed: "bg-gray-100 text-gray-800",
-    cancelled: "bg-red-100 text-red-800",
-    all: "bg-purple-100 text-purple-800",
-  };
-
-  // Filter gigs based on active status
-  const filteredGigs = activeFilter
-    ? gigs.filter((gig) => gig.status === activeFilter)
-    : gigs;
 
   return (
     <div className="space-y-8">
-      {/* Stats Overview */}
+      {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <StatCard
           icon={BriefcaseIcon}
@@ -96,14 +69,14 @@ export default function ClientGigs() {
           value={stats.totalGigs}
         />
         <StatCard
-          icon={ChartBarIcon}
+          icon={CheckCircleIcon}
           title="Open Gigs"
           value={stats.openGigs}
         />
         <StatCard
-          icon={CheckCircleIcon}
+          icon={ChartBarIcon}
           title="In Progress"
-          value={stats.closedGigs}
+          value={stats.inProgressGigs}
         />
         <StatCard
           icon={CurrencyBangladeshiIcon}
@@ -112,133 +85,94 @@ export default function ClientGigs() {
         />
       </div>
 
-      {/* Gigs List */}
+      {/* Search and Filters */}
       <div className="bg-white rounded-xl shadow-lg p-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-          <h2 className="text-xl font-semibold">Your Gigs</h2>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setActiveFilter(null)}
-              className={`px-4 py-2 rounded-full text-sm font-medium ${
-                !activeFilter ? statusStyles.all : "bg-gray-100 text-gray-800"
-              }`}
-            >
-              All ({stats.totalGigs})
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1 relative">
+            <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 absolute left-3 top-3" />
+            <input
+              type="text"
+              placeholder="Search your gigs..."
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+            />
+          </div>
+          <div className="flex items-center gap-3">
+            <button className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+              <CheckCircleIcon className="h-5 w-5 text-gray-600 mr-2" />
+              Filter by Status
             </button>
-            {Object.entries({
-              open: "Open",
-              "in-progress": "In Progress",
-              completed: "Completed",
-              cancelled: "Cancelled",
-            }).map(([status, label]) => (
-              <button
-                key={status}
-                onClick={() => setActiveFilter(status)}
-                className={`px-4 py-2 rounded-full text-sm font-medium ${
-                  statusStyles[status]
-                } ${activeFilter === status ? "ring-2 ring-black" : ""}`}
-              >
-                {label} (
-                {status === "open"
-                  ? stats.openGigs
-                  : status === "in-progress"
-                  ? stats.closedGigs
-                  : stats[`${status}Gigs`]}
-                )
-              </button>
-            ))}
           </div>
         </div>
+      </div>
 
-        <div className="space-y-6">
-          {filteredGigs.map((gig) => (
-            <div
-              key={gig.$id}
-              className="border rounded-lg p-6 hover:shadow-md transition-shadow"
-            >
-              <div className="flex flex-col md:flex-row justify-between gap-6">
-                {/* Gig Details */}
-                <div className="flex-1 space-y-4">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold">{gig.title}</h3>
-                      <div className="flex items-center mt-2 text-gray-600">
-                        <CalendarIcon className="h-5 w-5 mr-2 text-emerald-600" />
-                        <span>
-                          Posted:{" "}
-                          {new Date(gig.$createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
-                    <span
-                      className={`px-3 py-1 rounded-full text-sm ${
-                        statusStyles[gig.status]
-                      }`}
-                    >
-                      {gig.status}
+      {/* Gig Listings */}
+      <div className="space-y-6">
+        {gigs.map((gig) => (
+          <div
+            key={gig.$id}
+            className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow p-6"
+          >
+            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+              {/* Gig Details */}
+              <div className="flex-1">
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="text-xl font-semibold">{gig.title}</h3>
+                  <span className="px-2 py-1 bg-emerald-100 text-emerald-800 text-sm rounded-full capitalize">
+                    {gig.status}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-4 text-gray-600 mb-4">
+                  <div className="flex items-center">
+                    <CurrencyBangladeshiIcon className="h-5 w-5 mr-1 text-emerald-600" />
+                    <span className="font-medium">
+                      ৳{gig.budget.toLocaleString()}
                     </span>
                   </div>
-
-                  {/* Budget and Duration */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm text-gray-500">Budget</label>
-                      <p className="font-medium">
-                        ৳{gig.budget.toLocaleString()}
-                        {gig.isNegotiable && (
-                          <span className="ml-2 text-sm text-gray-500">
-                            (Negotiable)
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-sm text-gray-500">Duration</label>
-                      <p className="font-medium">{gig.duration} months</p>
-                    </div>
-                  </div>
-
-                  {/* Skills */}
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium">Required Skills</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {gig.requiredSkills.map((skill, index) => (
-                        <span
-                          key={index}
-                          className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-sm"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <UserGroupIcon className="h-5 w-5 text-emerald-600" />
+                    <span className="text-sm">
+                      {gig.applicantsId.length} applicants
+                    </span>
                   </div>
                 </div>
 
-                {/* Actions */}
-                <div className="md:w-64 space-y-4">
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium">Applications</h4>
-                    <div className="flex items-center p-2 bg-gray-50 rounded">
-                      <UserGroupIcon className="h-5 w-5 text-emerald-600 mr-2" />
-                      <span className="text-sm">
-                        {gig.applicantsId.length} applicants
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Link
-                      to={`/client/gigs/${gig.$id}`}
-                      className="flex-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-center"
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {gig.requiredSkills.map((skill, index) => (
+                    <span
+                      key={index}
+                      className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-sm"
                     >
-                      View Details
-                    </Link>
+                      {skill.trim()}
+                    </span>
+                  ))}
+                </div>
+
+                <div className="text-sm text-gray-500 space-y-1">
+                  <p className="line-clamp-2">{gig.description}</p>
+                  <div className="flex items-center gap-2">
+                    <CalendarIcon className="h-4 w-4" />
+                    <span>
+                      Posted: {new Date(gig.$createdAt).toLocaleDateString()}
+                    </span>
+                    <span className="text-gray-400">•</span>
+                    <span>Duration: {gig.duration} months</span>
                   </div>
                 </div>
               </div>
+
+              {/* Action Button */}
+              <div className="md:text-right min-w-[120px]">
+                <Link
+                  to={`/client/gigs/${gig.$id}`}
+                  className="inline-block w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors text-center"
+                >
+                  Manage Gig
+                </Link>
+              </div>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
     </div>
   );
