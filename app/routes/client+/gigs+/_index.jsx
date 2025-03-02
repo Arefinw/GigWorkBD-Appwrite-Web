@@ -1,4 +1,5 @@
 // app/routes/client+/gigs+/_index.jsx
+import { useState } from "react";
 import { useLoaderData, Link } from "@remix-run/react";
 import {
   BriefcaseIcon,
@@ -46,9 +47,12 @@ export async function loader({ request }) {
         .length,
       completedGigs: gigs.documents.filter((g) => g.status === "completed")
         .length,
-      totalBudget: gigs.documents.reduce((sum, g) => sum + g.budget, 0),
+      withdrawnGigs: gigs.documents.filter((g) => g.status === "withdrawn")
+        .length, // Add this line
+      totalBudget: gigs.documents
+        .filter((gig) => gig.status !== "withdrawn")
+        .reduce((sum, g) => sum + g.budget, 0),
     };
-
     return { stats, gigs: gigs.documents };
   } catch (error) {
     console.error("Error fetching client gigs:", error);
@@ -58,6 +62,18 @@ export async function loader({ request }) {
 
 export default function ClientGigs() {
   const { stats, gigs } = useLoaderData();
+  const [activeFilter, setActiveFilter] = useState("open");
+
+  const statusConfig = {
+    open: { label: "Open", color: "bg-green-100 text-green-800" },
+    "in-progress": { label: "In Progress", color: "bg-blue-100 text-blue-800" },
+    completed: { label: "Completed", color: "bg-purple-100 text-purple-800" },
+    withdrawn: { label: "Withdrawn", color: "bg-gray-100 text-gray-800" },
+  };
+
+  const filteredGigs = activeFilter
+    ? gigs.filter((gig) => gig.status === activeFilter)
+    : gigs;
 
   return (
     <div className="space-y-8">
@@ -72,11 +88,15 @@ export default function ClientGigs() {
           icon={CheckCircleIcon}
           title="Open Gigs"
           value={stats.openGigs}
+          color="bg-green-100"
+          iconColor="text-green-600"
         />
         <StatCard
           icon={ChartBarIcon}
           title="In Progress"
           value={stats.inProgressGigs}
+          color="bg-blue-100"
+          iconColor="text-blue-600"
         />
         <StatCard
           icon={CurrencyBangladeshiIcon}
@@ -85,29 +105,43 @@ export default function ClientGigs() {
         />
       </div>
 
-      {/* Search and Filters */}
+      {/* Status Filters */}
       <div className="bg-white rounded-xl shadow-lg p-6">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1 relative">
-            <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 absolute left-3 top-3" />
-            <input
-              type="text"
-              placeholder="Search your gigs..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-            />
-          </div>
-          <div className="flex items-center gap-3">
-            <button className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-              <CheckCircleIcon className="h-5 w-5 text-gray-600 mr-2" />
-              Filter by Status
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h2 className="text-xl font-semibold">Your Gigs</h2>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setActiveFilter(null)}
+              className={`px-4 py-2 rounded-full text-sm font-medium ${
+                !activeFilter
+                  ? "bg-purple-100 text-purple-800"
+                  : "bg-gray-100 text-gray-800"
+              }`}
+            >
+              All ({stats.totalGigs})
             </button>
+            {Object.entries(statusConfig).map(([status, config]) => (
+              <button
+                key={status}
+                onClick={() => setActiveFilter(status)}
+                className={`px-4 py-2 rounded-full text-sm font-medium ${
+                  config.color
+                } ${activeFilter === status ? "ring-2 ring-black" : ""}`}
+              >
+                {config.label} (
+                {status === "withdrawn"
+                  ? stats.withdrawnGigs
+                  : stats[`${status.replace("-", "")}Gigs`] || 0}
+                )
+              </button>
+            ))}
           </div>
         </div>
       </div>
 
       {/* Gig Listings */}
       <div className="space-y-6">
-        {gigs.map((gig) => (
+        {filteredGigs.map((gig) => (
           <div
             key={gig.$id}
             className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow p-6"
@@ -117,8 +151,12 @@ export default function ClientGigs() {
               <div className="flex-1">
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="text-xl font-semibold">{gig.title}</h3>
-                  <span className="px-2 py-1 bg-emerald-100 text-emerald-800 text-sm rounded-full capitalize">
-                    {gig.status}
+                  <span
+                    className={`px-2 py-1 text-sm rounded-full capitalize ${
+                      statusConfig[gig.status].color
+                    }`}
+                  >
+                    {statusConfig[gig.status].label}
                   </span>
                 </div>
 
@@ -132,7 +170,8 @@ export default function ClientGigs() {
                   <div className="flex items-center gap-2">
                     <UserGroupIcon className="h-5 w-5 text-emerald-600" />
                     <span className="text-sm">
-                      {gig.applicantsId.length} applicants
+                      {gig.status === "withdrawn" ? 0 : gig.applicantsId.length}{" "}
+                      applicants
                     </span>
                   </div>
                 </div>
@@ -178,12 +217,18 @@ export default function ClientGigs() {
   );
 }
 
-function StatCard({ icon: Icon, title, value }) {
+function StatCard({
+  icon: Icon,
+  title,
+  value,
+  color = "bg-emerald-100",
+  iconColor = "text-emerald-600",
+}) {
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
       <div className="flex items-center">
-        <div className="bg-emerald-100 p-3 rounded-lg">
-          <Icon className="h-6 w-6 text-emerald-600" />
+        <div className={`${color} p-3 rounded-lg`}>
+          <Icon className={`h-6 w-6 ${iconColor}`} />
         </div>
         <div className="ml-4">
           <dt className="text-sm font-medium text-gray-500">{title}</dt>
