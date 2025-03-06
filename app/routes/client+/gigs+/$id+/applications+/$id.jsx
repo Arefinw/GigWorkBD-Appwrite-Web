@@ -163,7 +163,7 @@ export default function ApplicationDetails() {
               </Form>
             )}
             <Link
-              to={`/messages/new?to=${freelancer.$id}`}
+              to={`/messages/new/${freelancer.$id}`}
               className="px-4 py-2 border border-gray-300 hover:bg-gray-50 rounded-lg text-center"
             >
               Send Message

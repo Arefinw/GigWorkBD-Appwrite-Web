@@ -10,5 +10,5 @@ export async function loader({ request }) {
     return redirect("/login");
   }
 
-  retu;
+  return true;
 }

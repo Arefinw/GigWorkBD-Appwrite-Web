@@ -1,4 +1,4 @@
-// app/routes/_shared+/messages.jsx
+// app/routes/_shared+/messages+/_index.jsx
 import { useLoaderData } from "@remix-run/react";
 import {
   UserCircleIcon,
@@ -8,7 +8,7 @@ import {
   ChevronLeftIcon,
 } from "@heroicons/react/24/outline";
 
-export async function loader() {
+export async function loader({ request }) {
   // Mock data - replace with real API calls
   return {
     conversations: [

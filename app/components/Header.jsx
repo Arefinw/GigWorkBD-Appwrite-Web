@@ -12,18 +12,25 @@ import {
   ChartBarIcon,
   Cog6ToothIcon,
   ArrowRightOnRectangleIcon,
+  BellIcon,
+  ChatBubbleOvalLeftIcon,
 } from "@heroicons/react/24/outline";
 
-export default function Header({ userId, role }) {
+export default function Header({
+  userId,
+  role,
+  notificationCount = 3,
+  messageCount = 2,
+}) {
   const navigation = {
     common: [
       { name: "Home", href: "/", icon: HomeIcon },
-      { name: "Browse Gigs", href: "/freelancer/gigs", icon: BriefcaseIcon },
+      { name: "Browse GIGs", href: "/freelancer/gigs", icon: BriefcaseIcon },
     ],
     client: [
       { name: "Dashboard", href: "/client/dashboard", icon: ChartBarIcon },
-      { name: "My Gigs", href: "/client/gigs", icon: DocumentTextIcon },
-      { name: "Post Gig", href: "/client/post-gig", icon: PlusCircleIcon },
+      { name: "My GIGs", href: "/client/gigs", icon: DocumentTextIcon },
+      { name: "Post GIG", href: "/client/post-gig", icon: PlusCircleIcon },
     ],
     freelancer: [
       {
@@ -56,9 +63,10 @@ export default function Header({ userId, role }) {
 
             {/* Desktop Navigation */}
             <div className="hidden md:ml-8 md:flex md:space-x-6">
-              {navigation.common.map((item) => (
-                <NavLink key={item.name} item={item} />
-              ))}
+              {!userId &&
+                navigation.common.map((item) => (
+                  <NavLink key={item.name} item={item} />
+                ))}
 
               {userId &&
                 role === "client" &&
@@ -75,7 +83,103 @@ export default function Header({ userId, role }) {
           </div>
 
           {/* Right Section - User Controls */}
-          <div className="flex items-center">
+          <div className="flex items-center gap-4">
+            {userId && (
+              <>
+                {/* Notifications Dropdown */}
+                <Menu as="div" className="relative">
+                  <Menu.Button className="p-2 rounded-full hover:bg-gray-100 relative">
+                    <BellIcon className="h-6 w-6 text-gray-600" />
+                    {notificationCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                        {notificationCount}
+                      </span>
+                    )}
+                  </Menu.Button>
+
+                  <Transition
+                    enter="transition ease-out duration-100"
+                    enterFrom="transform opacity-0 scale-95"
+                    enterTo="transform opacity-100 scale-100"
+                    leave="transition ease-in duration-75"
+                    leaveFrom="transform opacity-100 scale-100"
+                    leaveTo="transform opacity-0 scale-95"
+                  >
+                    <Menu.Items className="origin-top-right absolute right-0 mt-2 w-64 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
+                      <div className="py-2">
+                        <div className="px-4 py-2 text-sm font-medium text-gray-900">
+                          Notifications
+                        </div>
+                        <div className="border-t border-gray-100">
+                          {/* Notification Items */}
+                          <Menu.Item>
+                            {() => (
+                              <div className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                New message from Client XYZ
+                              </div>
+                            )}
+                          </Menu.Item>
+                          <Menu.Item>
+                            {() => (
+                              <div className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                Your proposal was accepted
+                              </div>
+                            )}
+                          </Menu.Item>
+                        </div>
+                      </div>
+                    </Menu.Items>
+                  </Transition>
+                </Menu>
+
+                {/* Messages Dropdown */}
+                <Menu as="div" className="relative">
+                  <Menu.Button className="p-2 rounded-full hover:bg-gray-100 relative">
+                    <ChatBubbleOvalLeftIcon className="h-6 w-6 text-gray-600" />
+                    {messageCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-emerald-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                        {messageCount}
+                      </span>
+                    )}
+                  </Menu.Button>
+
+                  <Transition
+                    enter="transition ease-out duration-100"
+                    enterFrom="transform opacity-0 scale-95"
+                    enterTo="transform opacity-100 scale-100"
+                    leave="transition ease-in duration-75"
+                    leaveFrom="transform opacity-100 scale-100"
+                    leaveTo="transform opacity-0 scale-95"
+                  >
+                    <Menu.Items className="origin-top-right absolute right-0 mt-2 w-64 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
+                      <div className="py-2">
+                        <div className="px-4 py-2 text-sm font-medium text-gray-900">
+                          Messages
+                        </div>
+                        <div className="border-t border-gray-100">
+                          {/* Message Items */}
+                          <Menu.Item>
+                            {() => (
+                              <div className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                Client ABC: Let's discuss the project
+                              </div>
+                            )}
+                          </Menu.Item>
+                          <Menu.Item>
+                            {() => (
+                              <div className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                System: New gig matches your skills
+                              </div>
+                            )}
+                          </Menu.Item>
+                        </div>
+                      </div>
+                    </Menu.Items>
+                  </Transition>
+                </Menu>
+              </>
+            )}
+
             {userId ? (
               <Menu as="div" className="relative ml-3">
                 <div className="flex items-center space-x-2">
@@ -172,6 +276,8 @@ export default function Header({ userId, role }) {
     </header>
   );
 }
+
+// Rest of the code remains the same for NavLink and MobileNavLink components
 
 function NavLink({ item }) {
   return (
