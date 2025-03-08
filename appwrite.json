@@ -525,7 +525,10 @@
         },
         {
             "$id": "67c572f00003845c256c",
-            "$permissions": [],
+            "$permissions": [
+                "create(\"users\")",
+                "read(\"users\")"
+            ],
             "databaseId": "67b0fdc20010f42f1f9e",
             "name": "Messages",
             "enabled": true,
@@ -617,11 +620,14 @@
         },
         {
             "$id": "67c6be6500155ccac388",
-            "$permissions": [],
+            "$permissions": [
+                "create(\"label:client\")",
+                "read(\"label:client\")"
+            ],
             "databaseId": "67b0fdc20010f42f1f9e",
             "name": "Conversations",
             "enabled": true,
-            "documentSecurity": false,
+            "documentSecurity": true,
             "attributes": [
                 {
                     "key": "clientId",
@@ -640,31 +646,49 @@
                     "default": null
                 },
                 {
-                    "key": "gigId",
-                    "type": "string",
-                    "required": true,
-                    "array": false,
-                    "size": 36,
-                    "default": null
-                },
-                {
                     "key": "lastMessage",
                     "type": "string",
-                    "required": true,
+                    "required": false,
                     "array": false,
                     "size": 1000,
                     "default": null
                 },
                 {
-                    "key": "lastMessageAt",
-                    "type": "datetime",
-                    "required": true,
+                    "key": "status",
+                    "type": "string",
+                    "required": false,
                     "array": false,
-                    "format": "",
+                    "elements": [
+                        "online",
+                        "offline"
+                    ],
+                    "format": "enum",
                     "default": null
                 }
             ],
             "indexes": []
+        }
+    ],
+    "functions": [
+        {
+            "$id": "67cc48ac0023b604aa0c",
+            "execute": [
+                "any"
+            ],
+            "name": "Chat",
+            "enabled": true,
+            "logging": true,
+            "runtime": "node-22",
+            "scopes": [
+                "users.read"
+            ],
+            "events": [],
+            "schedule": "",
+            "timeout": 15,
+            "entrypoint": "src/main.js",
+            "commands": "npm install",
+            "specification": "s-0.5vcpu-512mb",
+            "path": "functions/Chat"
         }
     ]
 }

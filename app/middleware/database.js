@@ -24,8 +24,7 @@ export async function getClientUser(userId, secret) {
     const user = await databases.listDocuments(DATABASE_ID, USER_COLLECTION, [
       Query.equal("userId", userId),
     ]);
-    console.log("userId", userId);
-    console.log("user", user);
+
     return user.documents[0];
   } catch (error) {
     console.error("Error getting user:", error.message);
