@@ -532,7 +532,7 @@
             "databaseId": "67b0fdc20010f42f1f9e",
             "name": "Messages",
             "enabled": true,
-            "documentSecurity": false,
+            "documentSecurity": true,
             "attributes": [
                 {
                     "key": "senderId",
@@ -571,6 +571,21 @@
                     "required": true,
                     "array": false,
                     "size": 36,
+                    "default": null
+                },
+                {
+                    "key": "status",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "elements": [
+                        "sent",
+                        "delivered",
+                        "read",
+                        "failed",
+                        "sending"
+                    ],
+                    "format": "enum",
                     "default": null
                 }
             ],

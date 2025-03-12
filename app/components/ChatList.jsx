@@ -1,29 +1,37 @@
-// app/components/ChatList.jsx
+import React, { useEffect, useState } from "react";
 import { Link } from "@remix-run/react";
-import { useEffect, useState } from "react";
 import { createClient, Query } from "../utils/client/appwrite";
-import { DATABASE_ID, CONVERSATION_COLLECTION } from "../utils/client/appwrite";
+import {
+  DATABASE_ID,
+  USER_COLLECTION,
+  CONVERSATION_COLLECTION,
+} from "../utils/client/appwrite";
+import {
+  UserCircleIcon,
+  ClockIcon,
+  CheckCircleIcon,
+} from "@heroicons/react/24/outline";
 
-export function ChatList({ currentUserId, sessionSecret }) {
-  const [conversations, setConversations] = useState([]);
+export function ChatList({ currentUserId, session }) {
   const [loading, setLoading] = useState(true);
+  const [client, setClient] = useState(null);
+  const [databases, setDatabases] = useState(null);
   const [error, setError] = useState(null);
-  const [subscription, setSubscription] = useState(null);
+
+  const [conversations, setConversations] = useState([]);
 
   useEffect(() => {
-    let isMounted = true;
     let unsubscribe;
+    const initializeAppwrite = async () => {
+      // Only run in browser environment
 
-    const initializeChat = async () => {
       try {
-        if (!sessionSecret || !currentUserId) {
-          throw new Error("Authentication required");
-        }
-
-        // Create authenticated client
-        const { databases, client } = await createClient(sessionSecret);
-
-        // Load initial conversations
+        const { client, databases } = await createClient(session);
+        setClient(client);
+        setDatabases(databases);
+        console.log(client);
+        console.log(databases);
+        // Fetch conversations
         const response = await databases.listDocuments(
           DATABASE_ID,
           CONVERSATION_COLLECTION,
@@ -35,132 +43,151 @@ export function ChatList({ currentUserId, sessionSecret }) {
             Query.orderDesc("$updatedAt"),
           ]
         );
+        console.log("response", response.documents);
 
-        if (isMounted) {
-          setConversations(response.documents);
-          setLoading(false);
-        }
+        // Enhance conversations with participant data
+        const enhanceConversation = async (conversation) => {
+          try {
+            const otherId =
+              conversation.clientId === currentUserId
+                ? conversation.freelancerId
+                : conversation.clientId;
+            const participant = await databases.getDocument(
+              DATABASE_ID,
+              USER_COLLECTION,
+              otherId
+            );
+            return { ...conversation, participant };
+          } catch (error) {
+            console.error("Error enhancing conversation:", error);
+            return conversation;
+          }
+        };
+
+        const enhanced = await Promise.all(
+          response.documents.map((conv) => enhanceConversation(conv))
+        );
+        setConversations(enhanced);
 
         // Setup realtime subscription
         unsubscribe = client.subscribe(
           `databases.${DATABASE_ID}.collections.${CONVERSATION_COLLECTION}.documents`,
           (response) => {
-            if (isMounted) {
-              handleRealtimeUpdate(response);
+            // Handle realtime updates
+            if (
+              response.events.includes(
+                "databases.*.collections.*.documents.*.create"
+              )
+            ) {
+              enhanceConversation(response.payload).then((enhancedConv) => {
+                setConversations((prev) => [enhancedConv, ...prev]);
+              });
+            }
+            if (
+              response.events.includes(
+                "databases.*.collections.*.documents.*.update"
+              )
+            ) {
+              console.log(response.payload);
+              enhanceConversation(response.payload).then((enhancedConv) => {
+                setConversations((prev) => [
+                  enhancedConv,
+                  ...prev.filter((conv) => conv.$id !== enhancedConv.$id),
+                ]);
+              });
             }
           }
         );
 
-        setSubscription(unsubscribe);
+        setLoading(false);
+        return () => {
+          unsubscribe();
+        };
       } catch (error) {
-        if (isMounted) {
-          setError(error.message);
-          setLoading(false);
-          console.error("ChatList error:", error);
-        }
+        console.log("error", error);
+        setError(error.message);
+        setLoading(false);
       }
     };
 
-    const handleRealtimeUpdate = (response) => {
-      if (
-        response.events.includes("databases.*.collections.*.documents.*.update")
-      ) {
-        setConversations((prev) =>
-          prev.map((conv) =>
-            conv.$id === response.payload.$id ? response.payload : conv
-          )
-        );
-      }
+    initializeAppwrite();
+  }, [session, currentUserId]);
 
-      // Handle new conversation creation
-      if (
-        response.events.includes("databases.*.collections.*.documents.*.create")
-      ) {
-        setConversations((prev) => [response.payload, ...prev]);
-      }
-
-      // Handle conversation deletion
-      if (
-        response.events.includes("databases.*.collections.*.documents.*.delete")
-      ) {
-        setConversations((prev) =>
-          prev.filter((conv) => conv.$id !== response.payload.$id)
-        );
-      }
-    };
-
-    initializeChat();
-
-    return () => {
-      isMounted = false;
-      if (subscription) {
-        subscription();
-      }
-    };
-  }, [currentUserId, sessionSecret]);
-
-  if (loading) {
-    return <div className="p-4 text-gray-500">Loading conversations...</div>;
-  }
-
-  if (error) {
+  if (loading)
     return (
-      <div className="p-4 text-red-500">
+      <div className="p-4 text-emerald-500 flex items-center justify-center h-full">
+        <ClockIcon className="h-8 w-8 animate-pulse" />
+      </div>
+    );
+
+  if (error)
+    return (
+      <div className="p-4 text-red-500 text-center">
+        <CheckCircleIcon className="h-6 w-6 inline-block mr-2" />
         Error loading conversations: {error}
       </div>
     );
-  }
-
-  if (!conversations.length) {
-    return <div className="p-4 text-gray-500">No conversations found</div>;
-  }
 
   return (
-    <div className="w-96 border-r border-gray-200">
-      <div className="p-4 bg-white border-b">
-        <h2 className="text-xl font-semibold">Conversations</h2>
+    <div className="h-full overflow-y-auto">
+      <div className="border-b border-emerald-100 p-4">
+        <h2 className="text-xl font-semibold text-emerald-600">
+          <UserCircleIcon className="h-6 w-6 inline-block mr-2" />
+          Messages
+        </h2>
       </div>
-      <div className="overflow-y-auto h-[calc(100vh-160px)]">
-        {conversations.map((conv) => (
-          <ConversationItem
-            key={conv.$id}
-            conversation={conv}
-            currentUserId={currentUserId}
-          />
-        ))}
-      </div>
+
+      {conversations.length === 0 ? (
+        <div className="p-8 text-center text-gray-500">
+          <CheckCircleIcon className="h-12 w-12 text-emerald-100 mx-auto mb-4" />
+          No conversations found
+        </div>
+      ) : (
+        <div className="divide-y divide-emerald-50">
+          {conversations.map((conversation) => (
+            <Link
+              key={conversation.$id}
+              to={`/messages/${conversation.$id}`}
+              className="block p-4 hover:bg-emerald-50 transition-colors"
+            >
+              <div className="flex items-center space-x-4">
+                <div className="relative">
+                  <UserCircleIcon className="h-12 w-12 text-emerald-300" />
+                  <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white" />
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <h3 className="text-sm font-medium text-emerald-900 truncate">
+                      {conversation.participant?.fullName || "Unknown User"}
+                    </h3>
+                    <span className="text-xs text-emerald-500">
+                      {new Date(conversation.$updatedAt).toLocaleTimeString(
+                        [],
+                        {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        }
+                      )}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-emerald-600 truncate">
+                      {conversation.lastMessage || "New conversation"}
+                    </p>
+                    {conversation.unreadCount > 0 && (
+                      <span className="bg-emerald-500 text-white rounded-full px-2 py-1 text-xs">
+                        {conversation.unreadCount}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
-
-const ConversationItem = ({ conversation, currentUserId }) => (
-  <Link
-    to={`/messages/${conversation.$id}`}
-    className="block p-4 border-b hover:bg-gray-50 transition-colors"
-  >
-    <div className="flex justify-between items-start">
-      <div className="flex-1">
-        <div className="flex justify-between items-center mb-1">
-          <span className="font-medium text-sm">
-            {conversation.clientId === currentUserId ? "Freelancer" : "Client"}
-          </span>
-          <span className="text-xs text-gray-400">
-            {new Date(conversation.$updatedAt).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </span>
-        </div>
-        <p className="text-sm text-gray-600 truncate">
-          {conversation.lastMessage || "No messages yet"}
-        </p>
-      </div>
-      {/* Unread indicator */}
-      {conversation.unreadCount > 0 && (
-        <span className="ml-2 w-5 h-5 flex items-center justify-center bg-blue-500 text-white text-xs rounded-full">
-          {conversation.unreadCount}
-        </span>
-      )}
-    </div>
-  </Link>
-);

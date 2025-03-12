@@ -1,127 +1,64 @@
-// app/components/ChatWindow.jsx
-import { useEffect, useState } from "react";
 import { useFetcher } from "@remix-run/react";
-import { createClient, Query } from "../utils/client/appwrite";
+import { useEffect, useState } from "react";
+import { createClient } from "../utils/client/appwrite";
+import {
+  UserCircleIcon,
+  PaperAirplaneIcon,
+  CheckCircleIcon,
+  ClockIcon,
+} from "@heroicons/react/24/outline";
 import { DATABASE_ID, MESSAGE_COLLECTION } from "../utils/client/appwrite";
 
 export function ChatWindow({
-  conversationId,
+  conversation,
+  initialMessages,
   currentUserId,
-  receiverId,
   sessionSecret,
 }) {
-  const [messages, setMessages] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [subscription, setSubscription] = useState(null);
   const fetcher = useFetcher();
+  const [client, setClient] = useState(null);
+  const [messages, setMessages] = useState(initialMessages);
 
   useEffect(() => {
-    let isMounted = true;
-    let unsubscribe;
-
-    const initializeChat = async () => {
-      try {
-        if (!sessionSecret) {
-          throw new Error("Authentication required");
-        }
-
-        // Create authenticated client
-        const { databases, client } = await createClient(sessionSecret);
-
-        // Load initial messages
-        const response = await databases.listDocuments(
-          DATABASE_ID,
-          MESSAGE_COLLECTION,
-          [
-            Query.equal("conversationId", conversationId),
-            Query.orderAsc("$createdAt"),
-          ]
-        );
-
-        if (isMounted) {
-          setMessages(response.documents);
-          setLoading(false);
-        }
-
-        // Setup realtime subscription
-        unsubscribe = client.subscribe(
-          `databases.${DATABASE_ID}.collections.${MESSAGE_COLLECTION}.documents`,
-          (response) => {
-            if (
-              isMounted &&
-              response.payload.conversationId === conversationId
-            ) {
-              handleRealtimeUpdate(response);
-            }
+    const initializeRealtime = async () => {
+      const { client } = await createClient(sessionSecret);
+      setClient(client);
+      const unsubscribe = client.subscribe(
+        `databases.${DATABASE_ID}.collections.${MESSAGE_COLLECTION}.documents`,
+        (response) => {
+          if (
+            response.events.includes(
+              "databases.*.collections.*.documents.*.create"
+            )
+          ) {
+            console.log(response.payload);
+            setMessages((prev) => [...prev, response.payload]);
           }
-        );
-
-        setSubscription(unsubscribe);
-      } catch (error) {
-        if (isMounted) {
-          setError(error.message);
-          setLoading(false);
-          console.error("ChatWindow error:", error);
         }
-      }
+      );
+
+      return () => unsubscribe();
     };
 
-    const handleRealtimeUpdate = (response) => {
-      if (
-        response.events.includes("databases.*.collections.*.documents.*.create")
-      ) {
-        setMessages((prev) => [...prev, response.payload]);
-      }
-
-      if (
-        response.events.includes("databases.*.collections.*.documents.*.update")
-      ) {
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.$id === response.payload.$id ? response.payload : msg
-          )
-        );
-      }
-
-      if (
-        response.events.includes("databases.*.collections.*.documents.*.delete")
-      ) {
-        setMessages((prev) =>
-          prev.filter((msg) => msg.$id !== response.payload.$id)
-        );
-      }
-    };
-
-    initializeChat();
-
-    return () => {
-      isMounted = false;
-      if (subscription) {
-        subscription();
-      }
-    };
-  }, [conversationId, sessionSecret]);
-
-  if (loading) {
-    return (
-      <div className="flex-1 flex items-center justify-center text-gray-500">
-        Loading messages...
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex-1 flex items-center justify-center text-red-500">
-        Error loading messages: {error}
-      </div>
-    );
-  }
+    initializeRealtime();
+  }, [sessionSecret]);
 
   return (
-    <div className="flex-1 flex flex-col">
-      <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
+    <div className="flex flex-col h-full">
+      {/* Chat Header */}
+      <div className="border-b border-emerald-100 p-4 bg-white">
+        <div className="flex items-center">
+          <UserCircleIcon className="h-10 w-10 text-emerald-300 mr-4" />
+          <div>
+            <h2 className="font-semibold text-emerald-600">
+              {conversation.participant?.fullName || "Participant"}
+            </h2>
+          </div>
+        </div>
+      </div>
+
+      {/* Messages Container */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-emerald-50">
         {messages.map((message) => (
           <MessageBubble
             key={message.$id}
@@ -131,62 +68,75 @@ export function ChatWindow({
         ))}
       </div>
 
+      {/* Message Input */}
       <fetcher.Form
         method="post"
-        className="p-4 border-t bg-white"
-        onSubmit={() => {
-          if (fetcher.state === "submitting") {
-            const form = document.getElementById("message-form");
-            form?.reset();
-          }
-        }}
+        className="border-t border-emerald-100 p-4 bg-white"
       >
-        <input type="hidden" name="conversationId" value={conversationId} />
-        <input type="hidden" name="receiverId" value={receiverId} />
-        <div className="flex gap-2">
+        <div className="flex items-center space-x-4">
           <input
             type="text"
-            name="content"
-            placeholder="Type a message..."
-            className="flex-1 px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+            name="message"
+            placeholder="Type your message..."
+            className="flex-1 px-4 py-2 border border-emerald-200 rounded-full focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             required
-            disabled={fetcher.state === "submitting"}
           />
-          <button
-            type="submit"
-            className="px-6 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 disabled:opacity-50"
-            disabled={fetcher.state === "submitting"}
-          >
-            {fetcher.state === "submitting" ? "Sending..." : "Send"}
-          </button>
+          <SubmitButton state={fetcher.state} />
         </div>
       </fetcher.Form>
     </div>
   );
 }
 
-const MessageBubble = ({ message, isCurrentUser }) => (
-  <div className={`mb-4 ${isCurrentUser ? "text-right" : "text-left"}`}>
-    <div
-      className={`inline-block p-3 rounded-lg max-w-[80%] ${
-        isCurrentUser ? "bg-blue-500 text-white" : "bg-white border"
-      }`}
-    >
-      <p className="break-words">{message.text}</p>
+function MessageBubble({ message, isCurrentUser }) {
+  return (
+    <div className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}>
       <div
-        className={`mt-1 text-xs ${
-          isCurrentUser ? "text-blue-100" : "text-gray-500"
+        className={`max-w-md p-4 rounded-2xl ${
+          isCurrentUser
+            ? "bg-emerald-500 text-white"
+            : "bg-white border border-emerald-100"
         }`}
       >
+        <p>{message.content}</p>
+        <MessageMeta message={message} isCurrentUser={isCurrentUser} />
+      </div>
+    </div>
+  );
+}
+
+function MessageMeta({ message, isCurrentUser }) {
+  return (
+    <div className="flex items-center justify-end mt-2 space-x-2">
+      <span className="text-xs opacity-75">
         {new Date(message.$createdAt).toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
         })}
-        <span className="ml-2">
-          {message.status === "read" && "✓✓"}
-          {message.status === "delivered" && "✓"}
-        </span>
-      </div>
+      </span>
+      {isCurrentUser && (
+        <CheckCircleIcon
+          className={`h-4 w-4 ${
+            message.status === "read" ? "text-emerald-300" : "text-emerald-100"
+          }`}
+        />
+      )}
     </div>
-  </div>
-);
+  );
+}
+
+function SubmitButton({ state }) {
+  return (
+    <button
+      type="submit"
+      disabled={state === "submitting"}
+      className="p-2 bg-emerald-500 text-white rounded-full hover:bg-emerald-600 disabled:opacity-50"
+    >
+      {state === "submitting" ? (
+        <ClockIcon className="h-6 w-6 animate-pulse" />
+      ) : (
+        <PaperAirplaneIcon className="h-6 w-6 rotate-45" />
+      )}
+    </button>
+  );
+}
